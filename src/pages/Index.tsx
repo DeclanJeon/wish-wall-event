@@ -47,7 +47,7 @@ const Index = () => {
               <div className="relative w-full max-w-md group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
                 <Button 
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => navigate('/event')}
                   className="relative w-full h-20 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0"
                 >
                   <div className="flex flex-col items-center justify-center p-1">

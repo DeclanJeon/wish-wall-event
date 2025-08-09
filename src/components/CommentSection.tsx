@@ -22,6 +22,7 @@ interface CommentWithReplies extends EventComment {
 const CommentSection = ({ postId }: CommentSectionProps) => {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
+  const [replySortOrder, setReplySortOrder] = useState<"latest" | "oldest">("latest");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
   const [newCommentMessage, setNewCommentMessage] = useState("");
@@ -32,7 +33,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
   useEffect(() => {
     fetchComments();
-  }, [postId, sortOrder]);
+  }, [postId, sortOrder, replySortOrder]);
 
   const fetchComments = async () => {
     const commentsData = await getComments(postId);
@@ -68,9 +69,10 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     });
 
     // Sort comments and replies
-    const sortComments = (comments: CommentWithReplies[]) => {
+    const sortComments = (comments: CommentWithReplies[], isReply: boolean = false) => {
+      const currentSortOrder = isReply ? replySortOrder : sortOrder;
       comments.sort((a, b) => {
-        if (sortOrder === "latest") {
+        if (currentSortOrder === "latest") {
           return b.createdAt - a.createdAt;
         } else {
           return a.createdAt - b.createdAt;
@@ -78,7 +80,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       });
       comments.forEach(comment => {
         if (comment.replies.length > 0) {
-          sortComments(comment.replies);
+          sortComments(comment.replies, true);
         }
       });
     };
@@ -274,15 +276,24 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">댓글 {comments.length}개</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : "latest")}
-          className="flex items-center gap-2"
-        >
-          <ArrowUpDown className="h-4 w-4" />
-          {sortOrder === "latest" ? "최신순" : "과거순"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">댓글:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : "latest")}
+          >
+            {sortOrder === "latest" ? "최신순" : "과거순"}
+          </Button>
+          <span className="text-sm text-muted-foreground">대댓글:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setReplySortOrder(replySortOrder === "latest" ? "oldest" : "latest")}
+          >
+            {replySortOrder === "latest" ? "최신순" : "과거순"}
+          </Button>
+        </div>
       </div>
 
       {/* New Comment Form */}

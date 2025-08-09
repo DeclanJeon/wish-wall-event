@@ -43,14 +43,18 @@ const ViewToggle = ({ view, onChange }: { view: "card" | "list"; onChange: (v: "
 const Event = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConceptModalOpen, setIsConceptModalOpen] = useState(false);
+  const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
   const [posts, setPosts] = useState<EventPost[]>([]);
   const [sort, setSort] = useState<SortMode>("latest");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postsPerPage] = useState(6);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPosts();
+    setIsNoticeModalOpen(true);
   }, []);
 
   const fetchPosts = async () => {
@@ -67,6 +71,12 @@ const Event = () => {
     }
     return arr;
   }, [posts, sort]);
+
+  const currentPosts = useMemo(() => {
+    return sortedPosts.slice(0, currentPage * postsPerPage);
+  }, [sortedPosts, currentPage, postsPerPage]);
+
+  const hasMorePosts = currentPosts.length < sortedPosts.length;
 
   const handleLike = async (postId: string) => {
     try {
@@ -89,46 +99,6 @@ const Event = () => {
     fetchPosts();
   };
 
-  const renderListView = () => (
-    <div className="space-y-4">
-      {sortedPosts.map((post) => (
-        <div key={post.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-semibold text-lg">{post.name || "익명"}</h3>
-              <p className="text-sm text-muted-foreground">
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLike(post.id)}
-                disabled={hasLiked(post.id)}
-                className={`flex items-center gap-2 ${hasLiked(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-              >
-                <Heart className={`h-4 w-4 ${hasLiked(post.id) ? "fill-current" : ""}`} />
-                {post.likesCount}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleViewDetails(post.id)}
-              >
-                자세히 보기
-              </Button>
-            </div>
-          </div>
-          
-          <div 
-            className="prose prose-sm max-w-none text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.message }}
-          />
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,19 +194,84 @@ const Event = () => {
               </div>
             </div>
           ) : viewMode === "card" ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedPosts.map((post) => (
-                <MessageCard
-                  key={post.id}
-                  post={post}
-                  onLike={handleLike}
-                  onViewDetails={handleViewDetails}
-                  isLiked={hasLiked(post.id)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentPosts.map((post) => (
+                  <MessageCard
+                    key={post.id}
+                    post={post}
+                    onLike={handleLike}
+                    onViewDetails={handleViewDetails}
+                    isLiked={hasLiked(post.id)}
+                  />
+                ))}
+              </div>
+              {hasMorePosts && (
+                <div className="text-center mt-12">
+                  <Button 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                  >
+                    더 많은 메시지 보기
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
-            renderListView()
+            <>
+              <div className="space-y-4">
+                {currentPosts.map((post) => (
+                  <div key={post.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">{post.name || "익명"}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLike(post.id)}
+                          disabled={hasLiked(post.id)}
+                          className={`flex items-center gap-2 ${hasLiked(post.id) ? "text-red-500" : "text-muted-foreground"}`}
+                        >
+                          <Heart className={`h-4 w-4 ${hasLiked(post.id) ? "fill-current" : ""}`} />
+                          {post.likesCount}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(post.id)}
+                        >
+                          자세히 보기
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="prose prose-sm max-w-none text-foreground"
+                      dangerouslySetInnerHTML={{ __html: post.message }}
+                    />
+                  </div>
+                ))}
+              </div>
+              {hasMorePosts && (
+                <div className="text-center mt-12">
+                  <Button 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                  >
+                    더 많은 메시지 보기
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
@@ -255,6 +290,29 @@ const Event = () => {
           setIsFormOpen(true);
         }}
       />
+
+      {/* 공지사항 모달 */}
+      <div className={`fixed inset-0 z-50 ${isNoticeModalOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-black/50" onClick={() => setIsNoticeModalOpen(false)} />
+        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card rounded-lg p-6 shadow-xl">
+          <div className="text-center">
+            <div className="text-4xl mb-4">📢</div>
+            <h2 className="text-xl font-bold mb-4">이벤트 공지사항</h2>
+            <div className="text-left space-y-3 mb-6 text-sm text-muted-foreground">
+              <p>• 따뜻한 마음을 담은 메시지를 남겨주세요</p>
+              <p>• 부적절한 내용은 삭제될 수 있습니다</p>
+              <p>• 모든 메시지는 검토 후 게시됩니다</p>
+              <p>• 리치 에디터로 예쁘게 꾸며보세요</p>
+            </div>
+            <Button 
+              onClick={() => setIsNoticeModalOpen(false)}
+              className="w-full"
+            >
+              확인했습니다
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
