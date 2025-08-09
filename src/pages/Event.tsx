@@ -158,26 +158,41 @@ const Event = () => {
           </p>
           
           {/* 주요 액션 버튼들 */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => setIsFormOpen(true)}
-              size="lg" 
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-            >
-              <div className="flex flex-col items-center">
-                <span className="text-xs opacity-75">내 메시지 전하기</span>
-                <span className="text-[10px] opacity-60 mt-0.5">예: 힘내세요! 응원합니다 💪</span>
+          <div className="flex flex-col sm:flex-row gap-6 items-center justify-center max-w-2xl mx-auto">
+            {/* 메시지 버튼 - 강조된 디자인 */}
+            <div className="relative w-full max-w-md group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+              <Button 
+                onClick={() => setIsFormOpen(true)}
+                className="relative w-full h-20 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0"
+              >
+                <div className="flex flex-col items-center justify-center p-1">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-2xl">💌</span>
+                    <span className="text-lg font-bold text-white drop-shadow-sm">내 메시지 전하기</span>
+                  </div>
+                  <div className="mt-1 px-4 py-1 bg-white/20 rounded-full">
+                    <span className="text-sm font-medium text-white/95">예: 힘내세요! 응원합니다 💪</span>
+                  </div>
+                </div>
+              </Button>
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-pink-600 text-xs font-medium px-3 py-1 rounded-full shadow-md transform transition-all duration-300 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1">
+                클릭해서 메시지 작성하기
               </div>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => window.open("https://smartstore.naver.com/cleopatrasalt", "_blank")}
-              className="flex items-center gap-2"
-            >
-              <Gift className="h-4 w-4" />
-              메시지가 담긴 선물 받기
-            </Button>
+            </div>
+
+            {/* 선물 받기 버튼 - 보조 액션 */}
+            <div className="w-full max-w-xs">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => window.open("https://smartstore.naver.com/cleopatrasalt", "_blank")}
+                className="w-full h-16 border-2 border-gray-200 hover:border-pink-300 hover:bg-pink-50 transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <Gift className="h-5 w-5 text-pink-500" />
+                <span className="text-gray-700 font-medium">메시지가 담긴 선물 받기</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
