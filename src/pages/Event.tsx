@@ -13,7 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heart, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import HeroRibbon from "@/components/HeroRibbon";
+
 
 const GiftURL = "https://smartstore.naver.com/cleopatrasalt";
 
@@ -71,27 +71,27 @@ const Event = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>이벤트 | 마음을 전하는 위시월</title>
         <meta name="description" content="이벤트에 참여하고 메시지를 남겨 마음을 전해보세요. 인기순/최신순으로 메시지를 둘러볼 수 있어요." />
         <link rel="canonical" href="/event" />
       </Helmet>
 
-      <header className="relative overflow-hidden">
-        <div className="w-full h-[320px] md:h-[460px]">
-          <img src="/lovable-uploads/51869f3a-37cd-4c24-9534-2839a6108638.png" alt="크리스탈과 실크 파도의 히어로 이미지" className="w-full h-full object-cover animate-[float-slow_10s_ease-in-out_infinite]" loading="lazy" />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/40 to-background/10" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="container mx-auto px-6">
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">마음을 전하는 이벤트</h1>
-            <p className="max-w-2xl text-muted-foreground">소중한 사람에게 응원의 메시지를 남겨주세요. 여러분의 한마디가 큰 힘이 됩니다. 남긴 메시지는 모두가 볼 수 있으며, 인기순/최신순으로 정렬해 볼 수 있어요.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="hero" className="shadow-glow">내 메시지 전하기</Button>
-                </DialogTrigger>
+      {/* 헤더 - 이벤트 설명과 주요 버튼들 */}
+      <header className="border-b bg-gradient-to-r from-blue-50/30 to-purple-50/30 dark:from-blue-950/30 dark:to-purple-950/30">
+        <div className="container mx-auto px-6 py-16 text-center">
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-4">마음을 전하는 이벤트</h1>
+          <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
+            소중한 사람에게 응원의 메시지를 남겨주세요. 여러분의 한마디가 큰 힘이 됩니다.
+          </p>
+          
+          {/* 주요 액션 버튼들 */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="hero" size="lg" className="shadow-glow">내 메시지 전하기</Button>
+              </DialogTrigger>
                 <DialogContent className="sm:max-w-[520px]">
                   <DialogHeader>
                     <DialogTitle>메시지 남기기</DialogTitle>
@@ -127,55 +127,75 @@ const Event = () => {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" onClick={() => window.open(GiftURL, "_blank", "noopener,noreferrer")}>메시지가 담긴 선물 받기</Button>
-            </div>
-            <div className="mt-8 hidden md:block">
-              <HeroRibbon />
-            </div>
+            <Button variant="outline" size="lg" onClick={() => window.open(GiftURL, "_blank", "noopener,noreferrer")}>
+              메시지가 담긴 선물 받기
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2"><MessageSquare className="opacity-70" /> 모두의 메시지</h2>
+      {/* 메시지 목록 */}
+      <main className="container mx-auto px-6 py-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <MessageSquare className="text-blue-500" /> 
+            모두의 메시지 ({sorted.length})
+          </h2>
           <SortTabs mode={sort} onChange={setSort} />
         </div>
 
-        <section className="mt-6 grid gap-4">
+        <section className="grid gap-4">
           {sorted.length === 0 ? (
-            <div className="text-center text-muted-foreground py-16 bg-glass rounded-lg">아직 메시지가 없어요. 첫 마음을 전해보세요!</div>
+            <div className="text-center py-20">
+              <div className="max-w-md mx-auto">
+                <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">아직 메시지가 없어요</h3>
+                <p className="text-muted-foreground mb-6">첫 번째 마음을 전해보세요!</p>
+                <Button onClick={() => setOpen(true)} variant="hero">
+                  첫 메시지 남기기
+                </Button>
+              </div>
+            </div>
           ) : (
-            <ul className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sorted.map((p) => (
-                <li key={p.id} className="border rounded-lg p-4 bg-card/60 hover:bg-accent/30 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <button className="text-left" onClick={() => navigate(`/post/${p.id}`)} aria-label="게시글 보기">
-                        <h3 className="font-semibold truncate max-w-[18rem]">{p.name || "익명"}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{p.message}</p>
-                      </button>
-                      <p className="text-xs text-muted-foreground mt-2">{new Date(p.createdAt).toLocaleString()}</p>
+                <article key={p.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-all duration-200 hover:border-blue-200">
+                  <header className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">{p.name || "익명"}</h3>
+                      <time className="text-xs text-muted-foreground">
+                        {new Date(p.createdAt).toLocaleDateString()}
+                      </time>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <button
-                        onClick={() => {
-                          const newCount = likePost(p.id);
-                          setPosts((prev) => prev.map(x => x.id === p.id ? { ...x, likesCount: newCount } : x));
-                        }}
-                        disabled={hasLiked(p.id)}
-                        className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-md border hover:bg-accent disabled:opacity-60"
-                        aria-label="좋아요"
-                      >
-                        <Heart className={hasLiked(p.id) ? "fill-primary text-primary" : ""} />
-                        {p.likesCount || 0}
-                      </button>
-                      <Link to={`/post/${p.id}`} className="text-xs underline text-muted-foreground">자세히 보기</Link>
-                    </div>
-                  </div>
-                </li>
+                    <button
+                      onClick={() => {
+                        const newCount = likePost(p.id);
+                        setPosts((prev) => prev.map(x => x.id === p.id ? { ...x, likesCount: newCount } : x));
+                      }}
+                      disabled={hasLiked(p.id)}
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border hover:bg-accent disabled:opacity-60 transition-colors"
+                      aria-label={`좋아요 ${p.likesCount || 0}개`}
+                    >
+                      <Heart className={`h-4 w-4 ${hasLiked(p.id) ? "fill-red-500 text-red-500" : ""}`} />
+                      {p.likesCount || 0}
+                    </button>
+                  </header>
+                  
+                  <p className="text-foreground leading-relaxed mb-4 line-clamp-3">
+                    {p.message}
+                  </p>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate(`/post/${p.id}`)}
+                    className="w-full justify-center"
+                  >
+                    자세히 보기 →
+                  </Button>
+                </article>
               ))}
-            </ul>
+            </div>
           )}
         </section>
       </main>
