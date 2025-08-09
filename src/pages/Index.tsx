@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
+import { Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConceptModal from "@/components/ConceptModal";
 import heroImage from "@/assets/hero-crystal.jpg";
@@ -41,19 +42,43 @@ const Index = () => {
               소중한 사람에게 따뜻한 마음을 전해보세요
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={() => setIsModalOpen(true)}
-                size="lg" 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-2xl"
-              >
-                내 메시지 전하기
-              </Button>
-              <Button variant="outline" size="lg" asChild className="border-white text-white hover:bg-white/20">
-                <a href="https://smartstore.naver.com/cleopatrasalt" target="_blank" rel="noopener noreferrer">
-                  선물 받으러 가기
-                </a>
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-6 items-center justify-center max-w-2xl mx-auto mt-6">
+              {/* 메인 액션 버튼 - 강조된 디자인 */}
+              <div className="relative w-full max-w-md group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <Button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="relative w-full h-20 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0"
+                >
+                  <div className="flex flex-col items-center justify-center p-1">
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-2xl">💌</span>
+                      <span className="text-lg font-bold text-white drop-shadow-sm">내 메시지 전하기</span>
+                    </div>
+                    <div className="mt-1 px-4 py-1 bg-white/20 rounded-full">
+                      <span className="text-sm font-medium text-white/95">지금 바로 마음을 전해보세요</span>
+                    </div>
+                  </div>
+                </Button>
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-pink-600 text-xs font-medium px-3 py-1 rounded-full shadow-md transform transition-all duration-300 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1">
+                  클릭해서 메시지 작성하기
+                </div>
+              </div>
+
+              {/* 보조 액션 버튼 */}
+              <div className="w-full max-w-xs">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  asChild
+                  className="w-full h-16 border-2 border-pink-400/80 bg-pink-500/10 hover:border-pink-300 hover:bg-pink-500/20 transition-colors duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <a href="https://smartstore.naver.com/cleopatrasalt" target="_blank" rel="noopener noreferrer">
+                    <Gift className="h-5 w-5 text-pink-200 group-hover:text-white transition-colors" />
+                    <span className="text-pink-100 group-hover:text-white font-medium transition-colors">선물 받으러 가기</span>
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -70,12 +95,7 @@ const Index = () => {
             여러분의 따뜻한 메시지가 모여 하나의 아름다운 벽이 됩니다.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl border bg-card shadow-lg">
-              <div className="text-4xl mb-4">📝</div>
-              <h3 className="font-bold text-lg mb-3">예쁜 카드로 메시지 작성</h3>
-              <p className="text-muted-foreground">다양한 스타일과 색상의 카드로 나만의 특별한 메시지를 꾸며보세요</p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-8">
             <div className="p-6 rounded-xl border bg-card shadow-lg">
               <div className="text-4xl mb-4">❤️</div>
               <h3 className="font-bold text-lg mb-3">서로 응원하기</h3>
