@@ -13,16 +13,7 @@ const RichEditor = ({ value, onChange, placeholder, maxLength = 10000 }: RichEdi
   const quillRef = useRef<ReactQuill>(null);
 
   const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      ['blockquote', 'code-block'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link', 'image'],
-      ['clean']
-    ],
+    toolbar: false, // 툴바 숨기기
   };
 
   const formats = [

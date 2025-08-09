@@ -160,7 +160,7 @@ const Event = () => {
           {/* 주요 액션 버튼들 */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => setIsConceptModalOpen(true)}
+              onClick={() => setIsFormOpen(true)}
               size="lg" 
               className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
             >
