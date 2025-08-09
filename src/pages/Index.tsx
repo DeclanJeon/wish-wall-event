@@ -93,7 +93,7 @@ const Index = () => {
       <ConceptModal 
         open={isModalOpen} 
         onOpenChange={setIsModalOpen}
-        onNavigateToEvent={handleNavigateToEvent}
+        onStartWriting={handleNavigateToEvent}
       />
     </div>
   );

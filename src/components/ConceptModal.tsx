@@ -5,10 +5,10 @@ import { Heart, MessageSquare, Gift } from "lucide-react";
 interface ConceptModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNavigateToEvent: () => void;
+  onStartWriting: () => void;
 }
 
-const ConceptModal = ({ open, onOpenChange, onNavigateToEvent }: ConceptModalProps) => {
+const ConceptModal = ({ open, onOpenChange, onStartWriting }: ConceptModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -57,7 +57,7 @@ const ConceptModal = ({ open, onOpenChange, onNavigateToEvent }: ConceptModalPro
             </p>
 
             <Button 
-              onClick={onNavigateToEvent}
+              onClick={onStartWriting}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
               size="lg"
             >

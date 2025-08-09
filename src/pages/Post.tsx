@@ -2,33 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Heart, MessageCircle } from "lucide-react";
-import { addComment, getComments, getPost, hasLiked, likePost } from "@/lib/supabaseStore";
-import type { EventPost, EventComment } from "@/lib/eventTypes";
+import { Heart } from "lucide-react";
+import { getPost, hasLiked, likePost } from "@/lib/supabaseStore";
+import CommentSection from "@/components/CommentSection";
+import type { EventPost } from "@/lib/eventTypes";
 
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<EventPost | null>(null);
-  const [comments, setComments] = useState<EventComment[]>([]);
 
   useEffect(() => {
-    const loadPostAndComments = async () => {
+    const loadPost = async () => {
       if (!id) return;
       const found = await getPost(id);
       setPost(found);
-      if (found) {
-        const postComments = await getComments(found.id);
-        setComments(postComments);
-      }
     };
-    loadPostAndComments();
+    loadPost();
   }, [id]);
-
-  const [author, setAuthor] = useState("");
-  const [message, setMessage] = useState("");
 
   const pageTitle = useMemo(() => (post ? `${post.name || "익명"}의 메시지 | 이벤트` : "게시글 | 이벤트"), [post]);
 
@@ -74,56 +64,10 @@ const PostPage = () => {
             </Button>
           </header>
 
-          <p className="mt-4 leading-7 whitespace-pre-wrap">{post.message}</p>
+          <div className="mt-4 leading-7" dangerouslySetInnerHTML={{ __html: post.message }} />
         </article>
 
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold flex items-center gap-2"><MessageCircle className="opacity-70" /> 댓글</h2>
-
-          <form
-            className="mt-4 grid gap-3 border rounded-lg p-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!message.trim()) return;
-              try {
-                const c = await addComment(post.id, { author: author || undefined, message: message.trim() });
-                setComments((prev) => [...prev, c]);
-                setAuthor("");
-                setMessage("");
-              } catch (error) {
-                console.error("Comment error:", error);
-              }
-            }}
-          >
-            <div className="grid md:grid-cols-5 gap-3">
-              <div className="md:col-span-2 grid gap-2">
-                <Label htmlFor="author">이름 (선택)</Label>
-                <Input id="author" value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="익명" />
-              </div>
-              <div className="md:col-span-3 grid gap-2">
-                <Label htmlFor="cmsg">댓글</Label>
-                <Textarea id="cmsg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="자유롭게 남겨주세요" />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit">댓글 남기기</Button>
-            </div>
-          </form>
-
-          <ul className="mt-6 grid gap-3">
-            {comments.length === 0 ? (
-              <li className="text-muted-foreground text-center py-10 border rounded-lg">아직 댓글이 없어요. 첫 댓글을 남겨주세요!</li>
-            ) : (
-              comments.map((c) => (
-                <li key={c.id} className="border rounded-lg p-4 bg-card/60">
-                  <p className="font-medium">{c.author || "익명"}</p>
-                  <p className="text-sm text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</p>
-                  <p className="mt-2 whitespace-pre-wrap leading-7">{c.message}</p>
-                </li>
-              ))
-            )}
-          </ul>
-        </section>
+        <CommentSection postId={post.id} />
       </main>
     </div>
   );

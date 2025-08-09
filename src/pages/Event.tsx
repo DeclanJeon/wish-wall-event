@@ -10,6 +10,7 @@ import { getPosts, likePost, hasLiked } from "@/lib/supabaseStore";
 import { useToast } from "@/hooks/use-toast";
 import MessageCard from "@/components/MessageCard";
 import MessageForm from "@/components/MessageForm";
+import ConceptModal from "@/components/ConceptModal";
 
 const SortTabs = ({ mode, onChange }: { mode: SortMode; onChange: (m: SortMode) => void }) => (
   <div className="flex items-center gap-2">
@@ -41,6 +42,7 @@ const ViewToggle = ({ view, onChange }: { view: "card" | "list"; onChange: (v: "
 
 const Event = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isConceptModalOpen, setIsConceptModalOpen] = useState(false);
   const [posts, setPosts] = useState<EventPost[]>([]);
   const [sort, setSort] = useState<SortMode>("latest");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
@@ -158,7 +160,7 @@ const Event = () => {
           {/* 주요 액션 버튼들 */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => setIsFormOpen(true)}
+              onClick={() => setIsConceptModalOpen(true)}
               size="lg" 
               className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
             >
@@ -228,6 +230,15 @@ const Event = () => {
         open={isFormOpen} 
         onOpenChange={setIsFormOpen}
         onSuccess={handleFormSuccess}
+      />
+      
+      <ConceptModal 
+        open={isConceptModalOpen} 
+        onOpenChange={setIsConceptModalOpen} 
+        onStartWriting={() => {
+          setIsConceptModalOpen(false);
+          setIsFormOpen(true);
+        }}
       />
     </div>
   );
