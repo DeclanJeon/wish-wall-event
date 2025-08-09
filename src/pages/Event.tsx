@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import hero from "@/assets/hero-crystal.jpg";
 import { addPost, getPosts, hasLiked, likePost } from "@/lib/eventStore";
 import type { EventPost } from "@/lib/eventTypes";
 import { useForm } from "react-hook-form";
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Heart, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import HeroRibbon from "@/components/HeroRibbon";
 
 const GiftURL = "https://smartstore.naver.com/cleopatrasalt";
 
@@ -79,7 +79,9 @@ const Event = () => {
       </Helmet>
 
       <header className="relative overflow-hidden">
-        <img src={hero} alt="이벤트 크리스탈 이미지, 하늘과 실크 파도 배경" className="w-full h-[320px] md:h-[420px] object-cover animate-[float-slow_10s_ease-in-out_infinite]" loading="lazy" />
+        <div className="w-full h-[320px] md:h-[460px]">
+          <img src="/lovable-uploads/51869f3a-37cd-4c24-9534-2839a6108638.png" alt="크리스탈과 실크 파도의 히어로 이미지" className="w-full h-full object-cover animate-[float-slow_10s_ease-in-out_infinite]" loading="lazy" />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/40 to-background/10" />
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-6">
@@ -126,6 +128,9 @@ const Event = () => {
               </Dialog>
 
               <Button variant="outline" onClick={() => window.open(GiftURL, "_blank", "noopener,noreferrer")}>메시지가 담긴 선물 받기</Button>
+            </div>
+            <div className="mt-8 hidden md:block">
+              <HeroRibbon />
             </div>
           </div>
         </div>
