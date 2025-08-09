@@ -133,7 +133,7 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
             )}
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label>카드 스타일</Label>
             <Select value={cardStyle} onValueChange={setCardStyle}>
               <SelectTrigger>
@@ -146,9 +146,9 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
                 <SelectItem value="vintage">빈티지형</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label>카드 색상</Label>
             <div className="grid grid-cols-6 gap-2">
               {[
@@ -170,7 +170,7 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
                 />
               ))}
             </div>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label>응원 메시지</Label>
