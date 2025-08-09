@@ -7,6 +7,8 @@ export interface EventPost {
   message: string;
   createdAt: number; // epoch ms
   likesCount: number;
+  cardStyle?: string;
+  cardColor?: string;
 }
 
 export interface EventComment {
@@ -15,4 +17,5 @@ export interface EventComment {
   author?: string;
   message: string;
   createdAt: number;
+  parentId?: string;
 }

@@ -22,6 +22,7 @@ export type Database = {
           message: string
           parent_id: string | null
           post_id: string
+          updated_at: string
         }
         Insert: {
           author: string
@@ -30,6 +31,7 @@ export type Database = {
           message: string
           parent_id?: string | null
           post_id: string
+          updated_at?: string
         }
         Update: {
           author?: string
@@ -38,6 +40,7 @@ export type Database = {
           message?: string
           parent_id?: string | null
           post_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -58,32 +61,38 @@ export type Database = {
       }
       posts: {
         Row: {
-          author: string
+          card_color: string | null
+          card_style: string | null
           created_at: string
           email: string | null
           id: string
           likes: number
           message: string
+          name: string
           phone: string | null
           updated_at: string
         }
         Insert: {
-          author: string
+          card_color?: string | null
+          card_style?: string | null
           created_at?: string
           email?: string | null
           id?: string
           likes?: number
           message: string
+          name: string
           phone?: string | null
           updated_at?: string
         }
         Update: {
-          author?: string
+          card_color?: string | null
+          card_style?: string | null
           created_at?: string
           email?: string | null
           id?: string
           likes?: number
           message?: string
+          name?: string
           phone?: string | null
           updated_at?: string
         }

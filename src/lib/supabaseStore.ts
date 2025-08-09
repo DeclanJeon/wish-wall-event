@@ -25,11 +25,13 @@ export async function getPosts(): Promise<EventPost[]> {
 
   return data.map(post => ({
     id: post.id,
-    name: post.author,
+    name: post.name,
     contact: post.email || post.phone || "",
     message: post.message,
     createdAt: new Date(post.created_at).getTime(),
-    likesCount: post.likes
+    likesCount: post.likes,
+    cardStyle: post.card_style,
+    cardColor: post.card_color
   }));
 }
 
@@ -39,10 +41,12 @@ export async function addPost(data: Omit<EventPost, "id" | "createdAt" | "likesC
   const { data: newPost, error } = await supabase
     .from("posts")
     .insert({
-      author: data.name || "익명",
+      name: data.name || "익명",
       email: isEmail ? data.contact : null,
       phone: isEmail ? null : data.contact,
-      message: data.message
+      message: data.message,
+      card_style: data.cardStyle || 'letter',
+      card_color: data.cardColor || 'white'
     })
     .select()
     .single();
@@ -54,11 +58,13 @@ export async function addPost(data: Omit<EventPost, "id" | "createdAt" | "likesC
 
   return {
     id: newPost.id,
-    name: newPost.author,
+    name: newPost.name,
     contact: newPost.email || newPost.phone || "",
     message: newPost.message,
     createdAt: new Date(newPost.created_at).getTime(),
-    likesCount: newPost.likes
+    likesCount: newPost.likes,
+    cardStyle: newPost.card_style,
+    cardColor: newPost.card_color
   };
 }
 
@@ -78,11 +84,13 @@ export async function getPost(id: string): Promise<EventPost | null> {
 
   return {
     id: data.id,
-    name: data.author,
+    name: data.name,
     contact: data.email || data.phone || "",
     message: data.message,
     createdAt: new Date(data.created_at).getTime(),
-    likesCount: data.likes
+    likesCount: data.likes,
+    cardStyle: data.card_style,
+    cardColor: data.card_color
   };
 }
 
@@ -104,7 +112,8 @@ export async function getComments(postId: string): Promise<EventComment[]> {
     postId: comment.post_id,
     author: comment.author,
     message: comment.message,
-    createdAt: new Date(comment.created_at).getTime()
+    createdAt: new Date(comment.created_at).getTime(),
+    parentId: comment.parent_id
   }));
 }
 
@@ -114,7 +123,8 @@ export async function addComment(postId: string, data: Omit<EventComment, "id" |
     .insert({
       post_id: postId,
       author: data.author || "익명",
-      message: data.message
+      message: data.message,
+      parent_id: data.parentId || null
     })
     .select()
     .single();
@@ -129,7 +139,8 @@ export async function addComment(postId: string, data: Omit<EventComment, "id" |
     postId: newComment.post_id,
     author: newComment.author,
     message: newComment.message,
-    createdAt: new Date(newComment.created_at).getTime()
+    createdAt: new Date(newComment.created_at).getTime(),
+    parentId: newComment.parent_id
   };
 }
 
