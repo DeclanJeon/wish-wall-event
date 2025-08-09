@@ -165,7 +165,7 @@ const Event = () => {
               className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
             >
               내 메시지 전하기
-              <span className="ml-2 text-xs opacity-75">
+              <span className="ml-2 text-xs opacity-75"><br />
                 예: "힘내세요! 응원합니다 💪"
               </span>
             </Button>
