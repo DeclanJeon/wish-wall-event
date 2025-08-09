@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Heart, MessageCircle } from "lucide-react";
-import { addComment, getComments, getPosts, hasLiked, likePost } from "@/lib/eventStore";
+import { addComment, getComments, getPost, hasLiked, likePost } from "@/lib/supabaseStore";
 import type { EventPost, EventComment } from "@/lib/eventTypes";
 
 const PostPage = () => {
@@ -15,10 +15,16 @@ const PostPage = () => {
   const [comments, setComments] = useState<EventComment[]>([]);
 
   useEffect(() => {
-    const posts = getPosts();
-    const found = posts.find((p) => p.id === id) || null;
-    setPost(found);
-    if (found) setComments(getComments(found.id));
+    const loadPostAndComments = async () => {
+      if (!id) return;
+      const found = await getPost(id);
+      setPost(found);
+      if (found) {
+        const postComments = await getComments(found.id);
+        setComments(postComments);
+      }
+    };
+    loadPostAndComments();
   }, [id]);
 
   const [author, setAuthor] = useState("");
@@ -53,9 +59,13 @@ const PostPage = () => {
               <p className="text-sm text-muted-foreground mt-1">{new Date(post.createdAt).toLocaleString()}</p>
             </div>
             <Button
-              onClick={() => {
-                const newCount = likePost(post.id);
-                setPost({ ...post, likesCount: newCount });
+              onClick={async () => {
+                try {
+                  const newCount = await likePost(post.id);
+                  setPost({ ...post, likesCount: newCount });
+                } catch (error) {
+                  console.error("Like error:", error);
+                }
               }}
               disabled={hasLiked(post.id)}
               variant="secondary"
@@ -72,13 +82,17 @@ const PostPage = () => {
 
           <form
             className="mt-4 grid gap-3 border rounded-lg p-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               if (!message.trim()) return;
-              const c = addComment(post.id, { author: author || undefined, message: message.trim() });
-              setComments((prev) => [...prev, c]);
-              setAuthor("");
-              setMessage("");
+              try {
+                const c = await addComment(post.id, { author: author || undefined, message: message.trim() });
+                setComments((prev) => [...prev, c]);
+                setAuthor("");
+                setMessage("");
+              } catch (error) {
+                console.error("Comment error:", error);
+              }
             }}
           >
             <div className="grid md:grid-cols-5 gap-3">

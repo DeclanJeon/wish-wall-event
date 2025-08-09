@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { addPost, getPosts, hasLiked, likePost } from "@/lib/eventStore";
+import { addPost, getPosts, hasLiked, likePost } from "@/lib/supabaseStore";
 import type { EventPost } from "@/lib/eventTypes";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -49,7 +49,11 @@ const Event = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setPosts(getPosts());
+    const loadPosts = async () => {
+      const posts = await getPosts();
+      setPosts(posts);
+    };
+    loadPosts();
   }, []);
 
   const sorted = useMemo(() => {
@@ -61,13 +65,21 @@ const Event = () => {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const onSubmit = (data: FormValues) => {
-    const contact = data.email ?? data.phone ?? "";
-    const newPost = addPost({ name: data.name, contact, message: data.message });
-    setPosts((prev) => [newPost, ...prev]);
-    toast({ title: "메시지가 업로드되었어요!", description: "따뜻한 마음을 전해주셔서 감사합니다." });
-    setOpen(false);
-    reset();
+  const onSubmit = async (data: FormValues) => {
+    try {
+      const contact = data.email ?? data.phone ?? "";
+      const newPost = await addPost({ name: data.name, contact, message: data.message });
+      setPosts((prev) => [newPost, ...prev]);
+      toast({ title: "메시지가 업로드되었어요!", description: "따뜻한 마음을 전해주셔서 감사합니다." });
+      setOpen(false);
+      reset();
+    } catch (error) {
+      toast({ 
+        title: "오류가 발생했습니다", 
+        description: "메시지 업로드에 실패했습니다. 다시 시도해주세요.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -168,9 +180,17 @@ const Event = () => {
                       </time>
                     </div>
                     <button
-                      onClick={() => {
-                        const newCount = likePost(p.id);
-                        setPosts((prev) => prev.map(x => x.id === p.id ? { ...x, likesCount: newCount } : x));
+                      onClick={async () => {
+                        try {
+                          const newCount = await likePost(p.id);
+                          setPosts((prev) => prev.map(x => x.id === p.id ? { ...x, likesCount: newCount } : x));
+                        } catch (error) {
+                          toast({ 
+                            title: "오류가 발생했습니다", 
+                            description: "좋아요 추가에 실패했습니다.",
+                            variant: "destructive"
+                          });
+                        }
                       }}
                       disabled={hasLiked(p.id)}
                       className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border hover:bg-accent disabled:opacity-60 transition-colors"
