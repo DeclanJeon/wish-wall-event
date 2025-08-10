@@ -106,6 +106,10 @@ export async function getPost(id: string): Promise<EventPost | null> {
 
 // Comments functions
 export async function getComments(postId: string): Promise<EventComment[]> {
+  if (!postId) {
+    console.error('getComments called without a valid postId');
+    return [];
+  }
   const { data, error } = await supabase
     .from('comments')
     .select('*')
@@ -210,9 +214,19 @@ export function hasLikedComment(commentId: string): boolean {
 
 export async function likeComment(commentId: string): Promise<number> {
   if (hasLikedComment(commentId)) {
-    const comments = await getComments(''); // This would need the postId in real implementation
-    const comment = comments.find((c) => c.id === commentId);
-    return comment?.likesCount ?? 0;
+    // Fetch current likes for this single comment without needing postId
+    const { data, error } = await supabase
+      .from('comments')
+      .select('likes')
+      .eq('id', commentId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching comment likes:', error);
+      return 0;
+    }
+
+    return (data?.likes ?? 0) as number;
   }
 
   // Add to local liked comments
