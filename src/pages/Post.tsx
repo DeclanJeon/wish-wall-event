@@ -10,6 +10,7 @@ import type { EventPost } from "@/lib/eventTypes";
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<EventPost | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showNoticeModal, setShowNoticeModal] = useState(true);
   const [dontShowToday, setDontShowToday] = useState(false);
 
@@ -24,14 +25,30 @@ const PostPage = () => {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) return;
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       const found = await getPost(id);
       setPost(found);
+      setIsLoading(false);
     };
     loadPost();
   }, [id]);
 
   const pageTitle = useMemo(() => (post ? `${post.name || "익명"}의 메시지 | 이벤트` : "게시글 | 이벤트"), [post]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-20 text-center">
+        <div className="animate-pulse">
+          <div className="h-4 bg-muted rounded w-3/4 mx-auto mb-4"></div>
+          <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
