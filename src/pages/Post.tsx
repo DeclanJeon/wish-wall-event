@@ -124,43 +124,6 @@ const PostPage = () => {
               >
                 <Heart className={hasLiked(post.id) ? "fill-primary text-primary" : ""} /> {post.likesCount || 0}
               </Button>
-              
-              {/* 드롭다운 메뉴 방식 */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    {getSortIcon()}
-                    <span className="hidden sm:inline">{getSortLabel()}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
-                    onClick={() => setCommentSortOrder('latest')}
-                    className={commentSortOrder === 'latest' ? 'bg-accent' : ''}
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    최신순
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setCommentSortOrder('oldest')}
-                    className={commentSortOrder === 'oldest' ? 'bg-accent' : ''}
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    과거순
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setCommentSortOrder('popular')}
-                    className={commentSortOrder === 'popular' ? 'bg-accent' : ''}
-                  >
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    인기순
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </header>
 
