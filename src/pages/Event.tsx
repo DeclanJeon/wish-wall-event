@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import MessageCard from "@/components/MessageCard";
 import MessageForm from "@/components/MessageForm";
 import ConceptModal from "@/components/ConceptModal";
+import PopularPostsSlider from "@/components/PopularPostsSlider";
 
 const SortTabs = ({ mode, onChange }: { mode: SortMode; onChange: (m: SortMode) => void }) => (
   <div className="flex items-center gap-2">
@@ -180,6 +181,8 @@ const Event = () => {
             <SortTabs mode={sort} onChange={setSort} />
           </div>
         </div>
+
+        <PopularPostsSlider posts={sortedPosts} onViewPost={handleViewDetails} />
 
         <section>
           {sortedPosts.length === 0 ? (

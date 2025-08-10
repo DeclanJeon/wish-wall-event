@@ -10,6 +10,8 @@ import type { EventPost } from "@/lib/eventTypes";
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<EventPost | null>(null);
+  const [showNoticeModal, setShowNoticeModal] = useState(true);
+  const [dontShowToday, setDontShowToday] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {

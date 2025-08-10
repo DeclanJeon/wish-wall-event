@@ -10,6 +10,7 @@ interface MessageCardProps {
   onLike: (id: string) => void;
   onViewDetails: (id: string) => void;
   isLiked: boolean;
+  onClick?: () => void;
 }
 
 const getCardStyles = (style: string, color: string) => {
@@ -34,9 +35,12 @@ const getCardStyles = (style: string, color: string) => {
   return `${baseStyles} ${styleClasses[style as keyof typeof styleClasses] || styleClasses.letter} ${colorClasses[color as keyof typeof colorClasses] || colorClasses.white}`;
 };
 
-const MessageCard = ({ post, onLike, onViewDetails, isLiked }: MessageCardProps) => {
+const MessageCard = ({ post, onLike, onViewDetails, isLiked, onClick }: MessageCardProps) => {
   return (
-    <Card className={getCardStyles(post.cardStyle || 'letter', post.cardColor || 'white')}>
+    <Card 
+      className={`${getCardStyles(post.cardStyle || 'letter', post.cardColor || 'white')} ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <CardContent className="space-y-4">
         <div className="flex justify-between items-start">
           <div>

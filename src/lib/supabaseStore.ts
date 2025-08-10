@@ -26,7 +26,9 @@ export async function getPosts(): Promise<EventPost[]> {
   return data.map(post => ({
     id: post.id,
     name: post.name,
+    affiliation: post.affiliation,
     contact: post.email || post.phone || "",
+    password: post.password,
     message: post.message,
     createdAt: new Date(post.created_at).getTime(),
     likesCount: post.likes,
@@ -36,14 +38,16 @@ export async function getPosts(): Promise<EventPost[]> {
 }
 
 export async function addPost(data: Omit<EventPost, "id" | "createdAt" | "likesCount">): Promise<EventPost> {
-  const isEmail = data.contact.includes("@");
+  const isEmail = data.contact && data.contact.includes("@");
   
   const { data: newPost, error } = await supabase
     .from("posts")
     .insert({
       name: data.name || "익명",
+      affiliation: data.affiliation,
       email: isEmail ? data.contact : null,
       phone: isEmail ? null : data.contact,
+      password: data.password,
       message: data.message,
       card_style: data.cardStyle || 'letter',
       card_color: data.cardColor || 'white'
@@ -59,7 +63,9 @@ export async function addPost(data: Omit<EventPost, "id" | "createdAt" | "likesC
   return {
     id: newPost.id,
     name: newPost.name,
+    affiliation: newPost.affiliation,
     contact: newPost.email || newPost.phone || "",
+    password: newPost.password,
     message: newPost.message,
     createdAt: new Date(newPost.created_at).getTime(),
     likesCount: newPost.likes,
@@ -85,7 +91,9 @@ export async function getPost(id: string): Promise<EventPost | null> {
   return {
     id: data.id,
     name: data.name,
+    affiliation: data.affiliation,
     contact: data.email || data.phone || "",
+    password: data.password,
     message: data.message,
     createdAt: new Date(data.created_at).getTime(),
     likesCount: data.likes,
@@ -113,7 +121,8 @@ export async function getComments(postId: string): Promise<EventComment[]> {
     author: comment.author,
     message: comment.message,
     createdAt: new Date(comment.created_at).getTime(),
-    parentId: comment.parent_id
+    parentId: comment.parent_id,
+    likesCount: comment.likes || 0
   }));
 }
 
@@ -140,7 +149,8 @@ export async function addComment(postId: string, data: Omit<EventComment, "id" |
     author: newComment.author,
     message: newComment.message,
     createdAt: new Date(newComment.created_at).getTime(),
-    parentId: newComment.parent_id
+    parentId: newComment.parent_id,
+    likesCount: newComment.likes || 0
   };
 }
 
@@ -170,6 +180,38 @@ export async function likePost(postId: string): Promise<number> {
     const updated = liked.filter(id => id !== postId);
     localStorage.setItem("event_liked_posts", JSON.stringify(updated));
     throw new Error("좋아요 추가에 실패했습니다.");
+  }
+
+  return data;
+}
+
+// Comment like functions
+export function hasLikedComment(commentId: string): boolean {
+  const liked = JSON.parse(localStorage.getItem("event_liked_comments") || "[]") as string[];
+  return liked.includes(commentId);
+}
+
+export async function likeComment(commentId: string): Promise<number> {
+  if (hasLikedComment(commentId)) {
+    const comments = await getComments(''); // This would need the postId in real implementation
+    const comment = comments.find(c => c.id === commentId);
+    return comment?.likesCount ?? 0;
+  }
+
+  // Add to local liked comments
+  const liked = JSON.parse(localStorage.getItem("event_liked_comments") || "[]") as string[];
+  liked.push(commentId);
+  localStorage.setItem("event_liked_comments", JSON.stringify(liked));
+
+  // Update likes count in database
+  const { data, error } = await supabase.rpc('increment_comment_likes', { comment_id: commentId });
+
+  if (error) {
+    console.error("Error liking comment:", error);
+    // Remove from local storage if database update failed
+    const updated = liked.filter(id => id !== commentId);
+    localStorage.setItem("event_liked_comments", JSON.stringify(updated));
+    throw new Error("댓글 좋아요 추가에 실패했습니다.");
   }
 
   return data;

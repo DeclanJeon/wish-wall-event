@@ -3,7 +3,9 @@ export type SortMode = "latest" | "popular";
 export interface EventPost {
   id: string;
   name?: string;
+  affiliation?: string;
   contact: string; // email or phone
+  password?: string;
   message: string;
   createdAt: number; // epoch ms
   likesCount: number;
@@ -18,4 +20,5 @@ export interface EventComment {
   message: string;
   createdAt: number;
   parentId?: string;
+  likesCount?: number;
 }

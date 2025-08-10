@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronRight, Reply, ArrowUpDown } from "lucide-react";
+import { ChevronDown, ChevronRight, Reply, Heart } from "lucide-react";
 import { EventComment } from "@/lib/eventTypes";
-import { getComments, addComment } from "@/lib/supabaseStore";
+import { getComments, addComment, likeComment, hasLikedComment } from "@/lib/supabaseStore";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import RichEditor from "./RichEditor";
 import { useToast } from "@/hooks/use-toast";
+import { containsProfanity } from "@/utils/profanityFilter";
+import { getRandomName } from "@/utils/randomNames";
 
 interface CommentSectionProps {
   postId: string;
@@ -21,8 +23,8 @@ interface CommentWithReplies extends EventComment {
 
 const CommentSection = ({ postId }: CommentSectionProps) => {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
-  const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
-  const [replySortOrder, setReplySortOrder] = useState<"latest" | "oldest">("latest");
+  const [sortOrder, setSortOrder] = useState<"latest" | "oldest" | "popular">("latest");
+  const [replySortOrder, setReplySortOrder] = useState<"latest" | "oldest" | "popular">("latest");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
   const [newCommentMessage, setNewCommentMessage] = useState("");
