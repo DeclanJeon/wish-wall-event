@@ -76,8 +76,10 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       comments.sort((a, b) => {
         if (currentSortOrder === "latest") {
           return b.createdAt - a.createdAt;
-        } else {
+        } else if (currentSortOrder === "oldest") {
           return a.createdAt - b.createdAt;
+        } else { // popular
+          return (b.likesCount || 0) - (a.likesCount || 0);
         }
       });
       comments.forEach(comment => {
@@ -93,10 +95,20 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentMessage.trim() || !newCommentAuthor.trim()) {
+    if (!newCommentMessage.trim()) {
       toast({
         title: "오류",
-        description: "이름과 댓글을 모두 입력해주세요.",
+        description: "댓글을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 비속어 검사
+    if (containsProfanity(newCommentMessage)) {
+      toast({
+        title: "오류",
+        description: "부적절한 언어가 포함되어 있습니다. 내용을 수정해주세요.",
         variant: "destructive",
       });
       return;
@@ -104,8 +116,9 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
     setIsSubmitting(true);
     try {
+      const finalAuthor = newCommentAuthor || getRandomName();
       await addComment(postId, {
-        author: newCommentAuthor,
+        author: finalAuthor,
         message: newCommentMessage,
       });
       
@@ -129,10 +142,20 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
   };
 
   const handleSubmitReply = async (parentId: string) => {
-    if (!replyMessage.trim() || !replyAuthor.trim()) {
+    if (!replyMessage.trim()) {
       toast({
         title: "오류",
-        description: "이름과 답글을 모두 입력해주세요.",
+        description: "답글을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 비속어 검사
+    if (containsProfanity(replyMessage)) {
+      toast({
+        title: "오류",
+        description: "부적절한 언어가 포함되어 있습니다. 내용을 수정해주세요.",
         variant: "destructive",
       });
       return;
@@ -140,8 +163,9 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
     setIsSubmitting(true);
     try {
+      const finalAuthor = replyAuthor || getRandomName();
       await addComment(postId, {
-        author: replyAuthor,
+        author: finalAuthor,
         message: replyMessage,
         parentId,
       });
@@ -181,17 +205,34 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     setComments(updateCollapse(comments));
   };
 
+  const handleLikeComment = async (commentId: string) => {
+    try {
+      const newCount = await likeComment(commentId);
+      // 댓글 목록을 다시 가져와서 업데이트
+      await fetchComments();
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "좋아요 추가에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const renderComment = (comment: CommentWithReplies, depth: number = 0) => {
     const hasReplies = comment.replies.length > 0;
     const marginLeft = depth * 24;
+    
+    // 대댓글 계층을 3개로 제한
+    if (depth >= 3) return null;
 
     return (
-      <div key={comment.id} style={{ marginLeft: `${marginLeft}px` }} className="border-l-2 border-gray-100 pl-4">
-        <div className="bg-card p-4 rounded-lg shadow-sm mb-4">
+      <div key={comment.id} style={{ marginLeft: `${marginLeft}px` }} className="border-l-2 border-gray-100 pl-3">
+        <div className="bg-card p-3 rounded-lg shadow-sm mb-2">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h4 className="font-semibold">{comment.author}</h4>
-              <p className="text-sm text-muted-foreground">
+              <h4 className="font-medium text-sm">{comment.author}</h4>
+              <p className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ko })}
               </p>
             </div>
@@ -200,38 +241,53 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleCollapse(comment.id)}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 text-xs h-6"
               >
-                {comment.collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {comment.collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 {comment.replies.length}개 답글
               </Button>
             )}
           </div>
           
           <div 
-            className="prose prose-sm max-w-none mb-3"
+            className="prose prose-sm max-w-none mb-2 text-sm"
             dangerouslySetInnerHTML={{ __html: comment.message }}
           />
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-            className="flex items-center gap-1"
-          >
-            <Reply className="h-4 w-4" />
-            답글
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleLikeComment(comment.id)}
+              disabled={hasLikedComment(comment.id)}
+              className={`flex items-center gap-1 h-6 text-xs ${hasLikedComment(comment.id) ? "text-red-500" : "text-muted-foreground"}`}
+            >
+              <Heart className={`h-3 w-3 ${hasLikedComment(comment.id) ? "fill-current" : ""}`} />
+              {comment.likesCount || 0}
+            </Button>
+            
+            {depth < 2 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                className="flex items-center gap-1 h-6 text-xs"
+              >
+                <Reply className="h-3 w-3" />
+                답글
+              </Button>
+            )}
+          </div>
 
           {replyingTo === comment.id && (
             <div className="mt-4 space-y-4 border-t pt-4">
               <div className="space-y-2">
-                <Label htmlFor={`reply-author-${comment.id}`}>이름</Label>
+                <Label htmlFor={`reply-author-${comment.id}`}>이름 (선택사항)</Label>
                 <Input
                   id={`reply-author-${comment.id}`}
                   value={replyAuthor}
                   onChange={(e) => setReplyAuthor(e.target.value)}
-                  placeholder="이름을 입력하세요"
+                  placeholder="이름을 입력하세요 (미입력시 랜덤 이름으로 표시)"
                 />
               </div>
               
@@ -245,14 +301,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
                 />
               </div>
               
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => handleSubmitReply(comment.id)}
-                  disabled={isSubmitting}
-                  size="sm"
-                >
-                  {isSubmitting ? "등록 중..." : "답글 등록"}
-                </Button>
+              <div className="flex gap-2 justify-end">
                 <Button
                   variant="outline"
                   onClick={() => setReplyingTo(null)}
@@ -260,13 +309,20 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
                 >
                   취소
                 </Button>
+                <Button
+                  onClick={() => handleSubmitReply(comment.id)}
+                  disabled={isSubmitting}
+                  size="sm"
+                >
+                  {isSubmitting ? "등록 중..." : "답글 등록"}
+                </Button>
               </div>
             </div>
           )}
         </div>
 
         {hasReplies && !comment.collapsed && (
-          <div className="ml-4">
+          <div className="ml-2">
             {comment.replies.map(reply => renderComment(reply, depth + 1))}
           </div>
         )}
@@ -278,22 +334,22 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">댓글 {comments.length}개</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">댓글:</span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : "latest")}
+            onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : sortOrder === "oldest" ? "popular" : "latest")}
           >
-            {sortOrder === "latest" ? "최신순" : "과거순"}
+            {sortOrder === "latest" ? "최신순" : sortOrder === "oldest" ? "과거순" : "인기순"}
           </Button>
           <span className="text-sm text-muted-foreground">대댓글:</span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setReplySortOrder(replySortOrder === "latest" ? "oldest" : "latest")}
+            onClick={() => setReplySortOrder(replySortOrder === "latest" ? "oldest" : replySortOrder === "oldest" ? "popular" : "latest")}
           >
-            {replySortOrder === "latest" ? "최신순" : "과거순"}
+            {replySortOrder === "latest" ? "최신순" : replySortOrder === "oldest" ? "과거순" : "인기순"}
           </Button>
         </div>
       </div>
@@ -302,12 +358,12 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       <div className="bg-card p-4 rounded-lg border">
         <form onSubmit={handleSubmitComment} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="comment-author">이름</Label>
+            <Label htmlFor="comment-author">이름 (선택사항)</Label>
             <Input
               id="comment-author"
               value={newCommentAuthor}
               onChange={(e) => setNewCommentAuthor(e.target.value)}
-              placeholder="이름을 입력하세요"
+              placeholder="이름을 입력하세요 (미입력시 랜덤 이름으로 표시)"
             />
           </div>
           
@@ -321,9 +377,11 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
             />
           </div>
           
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "등록 중..." : "댓글 등록"}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "등록 중..." : "댓글 등록"}
+            </Button>
+          </div>
         </form>
       </div>
 

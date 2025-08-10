@@ -14,6 +14,15 @@ const PostPage = () => {
   const [dontShowToday, setDontShowToday] = useState(false);
 
   useEffect(() => {
+    // 오늘 하루 다시 보지 않음 체크
+    const today = new Date().toDateString();
+    const hideUntil = localStorage.getItem("post_notice_hide_until");
+    if (hideUntil === today) {
+      setShowNoticeModal(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadPost = async () => {
       if (!id) return;
       const found = await getPost(id);
@@ -71,6 +80,51 @@ const PostPage = () => {
 
         <CommentSection postId={post.id} />
       </main>
+
+      {/* 공지사항 모달 */}
+      {showNoticeModal && (
+        <div className="fixed inset-0 z-50">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setShowNoticeModal(false)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card rounded-lg p-6 shadow-xl">
+            <div className="text-center">
+              <div className="text-4xl mb-4">💬</div>
+              <h2 className="text-xl font-bold mb-4">댓글 작성 안내</h2>
+              <div className="text-left space-y-3 mb-6 text-sm text-muted-foreground">
+                <p>• 따뜻한 마음을 담은 댓글을 남겨주세요</p>
+                <p>• 부적절한 내용은 삭제될 수 있습니다</p>
+                <p>• 댓글에도 좋아요를 누를 수 있어요</p>
+                <p>• 대댓글은 최대 3단계까지 가능합니다</p>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="dontShowToday"
+                    checked={dontShowToday}
+                    onChange={(e) => setDontShowToday(e.target.checked)}
+                    className="rounded"
+                  />
+                  <label htmlFor="dontShowToday" className="text-sm">
+                    오늘 하루 다시 보지 않음
+                  </label>
+                </div>
+                <Button 
+                  onClick={() => {
+                    if (dontShowToday) {
+                      const today = new Date().toDateString();
+                      localStorage.setItem("post_notice_hide_until", today);
+                    }
+                    setShowNoticeModal(false);
+                  }}
+                  className="w-full"
+                >
+                  확인했습니다
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

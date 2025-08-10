@@ -206,6 +206,7 @@ const Event = () => {
                     onLike={handleLike}
                     onViewDetails={handleViewDetails}
                     isLiked={hasLiked(post.id)}
+                    onClick={() => handleViewDetails(post.id)}
                   />
                 ))}
               </div>
