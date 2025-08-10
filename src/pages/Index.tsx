@@ -7,12 +7,11 @@ import ConceptModal from "@/components/ConceptModal";
 import heroImage from "@/assets/hero-crystal.jpg";
 
 const Index = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConceptModalOpen, setIsConceptModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleNavigateToEvent = () => {
-    setIsModalOpen(false);
-    navigate("/event");
+    navigate("/event?showForm=true");
   };
 
   return (
@@ -47,7 +46,7 @@ const Index = () => {
               <div className="relative w-full max-w-md group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
                 <Button 
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={handleNavigateToEvent}
                   className="relative w-full h-20 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0"
                 >
                   <div className="flex flex-col items-center justify-center p-1">
@@ -111,8 +110,8 @@ const Index = () => {
       </div>
 
       <ConceptModal 
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen}
+        open={isConceptModalOpen}
+        onOpenChange={setIsConceptModalOpen}
         onStartWriting={handleNavigateToEvent}
       />
     </div>

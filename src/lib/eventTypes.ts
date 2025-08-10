@@ -1,4 +1,4 @@
-export type SortMode = "latest" | "popular";
+export type SortMode = 'latest' | 'popular';
 
 export interface EventPost {
   id: string;
@@ -18,4 +18,6 @@ export interface EventComment {
   message: string;
   createdAt: number;
   parentId?: string;
+  updatedAt?: number; // Optional for backward compatibility
+  isPrivate?: boolean; // Optional for backward compatibility
 }

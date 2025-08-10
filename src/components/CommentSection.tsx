@@ -12,16 +12,18 @@ import { useToast } from "@/hooks/use-toast";
 
 interface CommentSectionProps {
   postId: string;
+  sortOrder?: 'latest' | 'oldest';
 }
 
-interface CommentWithReplies extends EventComment {
+interface CommentWithReplies extends Omit<EventComment, 'author'> {
+  author?: string;
   replies: CommentWithReplies[];
   collapsed: boolean;
+  name?: string; // For backward compatibility
 }
 
-const CommentSection = ({ postId }: CommentSectionProps) => {
+const CommentSection = ({ postId, sortOrder = 'latest' }: CommentSectionProps) => {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
-  const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
   const [newCommentMessage, setNewCommentMessage] = useState("");
@@ -32,12 +34,55 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
   useEffect(() => {
     fetchComments();
-  }, [postId, sortOrder]);
+  }, [postId]);
+  
+  useEffect(() => {
+    // Re-sort comments when sortOrder changes
+    if (comments.length > 0) {
+      const reorganized = organizeComments(comments.flatMap(flattenComment));
+      setComments(reorganized);
+    }
+  }, [sortOrder]);
+  
+  // Helper function to flatten the comment tree
+  const flattenComment = (comment: CommentWithReplies): EventComment[] => {
+    const comments: EventComment[] = [{
+      id: comment.id,
+      postId: comment.postId,
+      parentId: comment.parentId,
+      author: comment.author || comment.name || '익명', // Handle both author and name for backward compatibility
+      message: comment.message,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      isPrivate: comment.isPrivate
+    }];
+    
+    if (comment.replies && comment.replies.length > 0) {
+      comment.replies.forEach(reply => {
+        comments.push(...flattenComment(reply));
+      });
+    }
+    
+    return comments;
+  };
 
   const fetchComments = async () => {
     const commentsData = await getComments(postId);
     const organizedComments = organizeComments(commentsData);
     setComments(organizedComments);
+  };
+
+  const sortComments = (comments: CommentWithReplies[]): CommentWithReplies[] => {
+    return [...comments].sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      
+      if (sortOrder === 'latest') {
+        return dateB - dateA; // Newest first
+      } else {
+        return dateA - dateB; // Oldest first
+      }
+    });
   };
 
   const organizeComments = (commentsData: EventComment[]): CommentWithReplies[] => {
@@ -48,6 +93,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     commentsData.forEach(comment => {
       commentMap.set(comment.id, {
         ...comment,
+        author: comment.author || (comment as any).name || '익명', // Handle both author and name
         replies: [],
         collapsed: false
       });
@@ -60,6 +106,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       if (comment.parentId) {
         const parent = commentMap.get(comment.parentId);
         if (parent) {
+          if (!parent.replies) parent.replies = [];
           parent.replies.push(commentWithReplies);
         }
       } else {
@@ -67,24 +114,18 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       }
     });
 
-    // Sort comments and replies
-    const sortComments = (comments: CommentWithReplies[]) => {
-      comments.sort((a, b) => {
-        if (sortOrder === "latest") {
-          return b.createdAt - a.createdAt;
-        } else {
-          return a.createdAt - b.createdAt;
-        }
-      });
-      comments.forEach(comment => {
-        if (comment.replies.length > 0) {
-          sortComments(comment.replies);
-        }
-      });
+    // Sort root comments
+    const sortedRootComments = sortComments(rootComments);
+    
+    // Sort replies for each comment
+    const sortReplies = (comments: CommentWithReplies[]): CommentWithReplies[] => {
+      return comments.map(comment => ({
+        ...comment,
+        replies: comment.replies ? sortReplies(comment.replies) : []
+      }));
     };
 
-    sortComments(rootComments);
-    return rootComments;
+    return sortReplies(sortedRootComments);
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -177,7 +218,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     setComments(updateCollapse(comments));
   };
 
-  const renderComment = (comment: CommentWithReplies, depth: number = 0) => {
+  const renderComment = (comment: CommentWithReplies, depth = 0) => {
     const hasReplies = comment.replies.length > 0;
     const marginLeft = depth * 24;
 
@@ -272,17 +313,8 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">댓글 {comments.length}개</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : "latest")}
-          className="flex items-center gap-2"
-        >
-          <ArrowUpDown className="h-4 w-4" />
-          {sortOrder === "latest" ? "최신순" : "과거순"}
-        </Button>
+      <div>
+        <h3 className="text-lg font-semibold mb-4">댓글 {comments.length}개</h3>
       </div>
 
       {/* New Comment Form */}

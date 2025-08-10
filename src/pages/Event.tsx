@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Gift, Home, LayoutGrid, List, ArrowLeft } from "lucide-react";
+import { Heart, MessageCircle, Gift, Home, LayoutGrid, List, ArrowUpDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,8 @@ import { getPosts, likePost, hasLiked } from "@/lib/supabaseStore";
 import { useToast } from "@/hooks/use-toast";
 import MessageCard from "@/components/MessageCard";
 import MessageForm from "@/components/MessageForm";
-import ConceptModal from "@/components/ConceptModal";
+import NoticeModal from "@/components/NoticeModal";
+import CommentSection from "@/components/CommentSection";
 
 const SortTabs = ({ mode, onChange }: { mode: SortMode; onChange: (m: SortMode) => void }) => (
   <div className="flex items-center gap-2">
@@ -42,15 +43,23 @@ const ViewToggle = ({ view, onChange }: { view: "card" | "list"; onChange: (v: "
 
 const Event = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isConceptModalOpen, setIsConceptModalOpen] = useState(false);
+  const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
   const [posts, setPosts] = useState<EventPost[]>([]);
   const [sort, setSort] = useState<SortMode>("latest");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [commentSortOrder, setCommentSortOrder] = useState<"latest" | "oldest">("latest");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPosts();
+    
+    // 페이지 첫 접근 시 공지사항 모달만 표시
+    const hasSeenNotice = sessionStorage.getItem('eventNoticeShown');
+    if (!hasSeenNotice) {
+      setIsNoticeModalOpen(true);
+      sessionStorage.setItem('eventNoticeShown', 'true');
+    }
   }, []);
 
   const fetchPosts = async () => {
@@ -87,6 +96,11 @@ const Event = () => {
 
   const handleFormSuccess = () => {
     fetchPosts();
+    setIsFormOpen(false);
+  };
+  
+  const handleCommentSortToggle = () => {
+    setCommentSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest');
   };
 
   const renderListView = () => (
@@ -125,6 +139,11 @@ const Event = () => {
             className="prose prose-sm max-w-none text-foreground"
             dangerouslySetInnerHTML={{ __html: post.message }}
           />
+          
+          {/* 리스트 뷰에서도 댓글 섹션 추가 */}
+          <div className="mt-4 pt-4 border-t">
+            <CommentSection postId={post.id} sortOrder={commentSortOrder} />
+          </div>
         </div>
       ))}
     </div>
@@ -149,6 +168,14 @@ const Event = () => {
             >
               <Home className="h-4 w-4" />
               홈으로
+            </Button>
+            {/* 공지사항 다시보기 버튼 */}
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsNoticeModalOpen(true)}
+              className="text-sm"
+            >
+              📢 공지사항
             </Button>
           </div>
           
@@ -204,10 +231,22 @@ const Event = () => {
             <MessageCircle className="text-blue-500" /> 
             모두의 메시지 ({sortedPosts.length})
           </h2>
-          
           <div className="flex items-center gap-4">
             <ViewToggle view={viewMode} onChange={setViewMode} />
             <SortTabs mode={sort} onChange={setSort} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCommentSortToggle}
+              className="flex items-center gap-1"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              댓글 {commentSortOrder === 'latest' ? '최신순' : '과거순'}
+            </Button>
+            <Button onClick={() => setIsFormOpen(true)}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              메시지 남기기
+            </Button>
           </div>
         </div>
 
@@ -226,13 +265,15 @@ const Event = () => {
           ) : viewMode === "card" ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedPosts.map((post) => (
-                <MessageCard
-                  key={post.id}
-                  post={post}
-                  onLike={handleLike}
-                  onViewDetails={handleViewDetails}
-                  isLiked={hasLiked(post.id)}
-                />
+                <div key={post.id} className="space-y-4">
+                  <MessageCard 
+                    post={post} 
+                    onLike={handleLike}
+                    onViewDetails={handleViewDetails}
+                    isLiked={hasLiked(post.id)}
+                  />
+                  <CommentSection postId={post.id} sortOrder={commentSortOrder} />
+                </div>
               ))}
             </div>
           ) : (
@@ -241,19 +282,17 @@ const Event = () => {
         </section>
       </main>
 
+      {/* 모달들 */}
       <MessageForm 
         open={isFormOpen} 
         onOpenChange={setIsFormOpen}
         onSuccess={handleFormSuccess}
       />
       
-      <ConceptModal 
-        open={isConceptModalOpen} 
-        onOpenChange={setIsConceptModalOpen} 
-        onStartWriting={() => {
-          setIsConceptModalOpen(false);
-          setIsFormOpen(true);
-        }}
+      {/* 공지사항 모달 */}
+      <NoticeModal 
+        open={isNoticeModalOpen} 
+        onOpenChange={setIsNoticeModalOpen}
       />
     </div>
   );
