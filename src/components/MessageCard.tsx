@@ -10,6 +10,7 @@ interface MessageCardProps {
   onLike: (id: string) => void;
   onViewDetails: (id: string) => void;
   isLiked: boolean;
+  onClick?: () => void;
 }
 
 const getCardStyles = (style: string, color: string) => {
@@ -34,9 +35,12 @@ const getCardStyles = (style: string, color: string) => {
   return `${baseStyles} ${styleClasses[style as keyof typeof styleClasses] || styleClasses.letter} ${colorClasses[color as keyof typeof colorClasses] || colorClasses.white}`;
 };
 
-const MessageCard = ({ post, onLike, onViewDetails, isLiked }: MessageCardProps) => {
+const MessageCard = ({ post, onLike, onViewDetails, isLiked, onClick }: MessageCardProps) => {
   return (
-    <Card className={getCardStyles(post.cardStyle || 'letter', post.cardColor || 'white')}>
+    <Card 
+      className={`${getCardStyles(post.cardStyle || 'letter', post.cardColor || 'white')} ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <CardContent className="space-y-4">
         <div className="flex justify-between items-start">
           <div>
@@ -53,20 +57,33 @@ const MessageCard = ({ post, onLike, onViewDetails, isLiked }: MessageCardProps)
         />
         
         <div className="flex justify-between items-center pt-4 border-t">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onLike(post.id)}
-            className={`flex items-center gap-2 ${isLiked ? "text-red-500" : "text-muted-foreground"}`}
-          >
-            <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-            {post.likesCount}
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(post.id);
+              }}
+              className={`flex items-center gap-2 ${isLiked ? "text-red-500" : "text-muted-foreground"}`}
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+              {post.likesCount}
+            </Button>
+            
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <MessageCircle className="h-4 w-4" />
+              <span>댓글 0개</span>
+            </div>
+          </div>
           
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onViewDetails(post.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(post.id);
+            }}
             className="flex items-center gap-2"
           >
             <MessageCircle className="h-4 w-4" />

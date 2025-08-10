@@ -17,8 +17,10 @@ export type Database = {
       comments: {
         Row: {
           author: string
+          comments_count: number
           created_at: string
           id: string
+          likes: number
           message: string
           parent_id: string | null
           post_id: string
@@ -26,8 +28,10 @@ export type Database = {
         }
         Insert: {
           author: string
+          comments_count?: number
           created_at?: string
           id?: string
+          likes?: number
           message: string
           parent_id?: string | null
           post_id: string
@@ -35,8 +39,10 @@ export type Database = {
         }
         Update: {
           author?: string
+          comments_count?: number
           created_at?: string
           id?: string
+          likes?: number
           message?: string
           parent_id?: string | null
           post_id?: string
@@ -61,6 +67,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          affiliation: string | null
           card_color: string | null
           card_style: string | null
           created_at: string
@@ -69,10 +76,12 @@ export type Database = {
           likes: number
           message: string
           name: string
+          password: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
+          affiliation?: string | null
           card_color?: string | null
           card_style?: string | null
           created_at?: string
@@ -81,10 +90,12 @@ export type Database = {
           likes?: number
           message: string
           name: string
+          password?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          affiliation?: string | null
           card_color?: string | null
           card_style?: string | null
           created_at?: string
@@ -93,6 +104,7 @@ export type Database = {
           likes?: number
           message?: string
           name?: string
+          password?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -103,6 +115,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_comment_likes: {
+        Args: { comment_id: string }
+        Returns: number
+      }
       increment_likes: {
         Args: { post_id: string }
         Returns: number

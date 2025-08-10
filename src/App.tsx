@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import Event from "./pages/Event";
 import Post from "./pages/Post";
 import { HelmetProvider } from "react-helmet-async";
+import LoadingBar from "./components/LoadingBar";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <LoadingBar />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/event" element={<Event />} />

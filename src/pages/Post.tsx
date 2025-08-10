@@ -2,25 +2,86 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, ArrowUpDown, TrendingUp, Clock, History } from "lucide-react";
 import { getPost, hasLiked, likePost } from "@/lib/supabaseStore";
 import CommentSection from "@/components/CommentSection";
 import type { EventPost } from "@/lib/eventTypes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<EventPost | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showNoticeModal, setShowNoticeModal] = useState(true);
+  const [dontShowToday, setDontShowToday] = useState(false);
+  const [commentSortOrder, setCommentSortOrder] = useState<"latest" | "oldest" | "popular">("latest");
+
+  useEffect(() => {
+    // 오늘 하루 다시 보지 않음 체크
+    const today = new Date().toDateString();
+    const hideUntil = localStorage.getItem("post_notice_hide_until");
+    if (hideUntil === today) {
+      setShowNoticeModal(false);
+    }
+  }, []);
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) return;
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       const found = await getPost(id);
       setPost(found);
+      setIsLoading(false);
     };
     loadPost();
   }, [id]);
 
   const pageTitle = useMemo(() => (post ? `${post.name || "익명"}의 메시지 | 이벤트` : "게시글 | 이벤트"), [post]);
+
+  const getSortLabel = () => {
+    switch (commentSortOrder) {
+      case 'latest':
+        return '최신순';
+      case 'oldest':
+        return '과거순';
+      case 'popular':
+        return '인기순';
+      default:
+        return '최신순';
+    }
+  };
+
+  const getSortIcon = () => {
+    switch (commentSortOrder) {
+      case 'latest':
+        return <Clock className="h-4 w-4" />;
+      case 'oldest':
+        return <History className="h-4 w-4" />;
+      case 'popular':
+        return <TrendingUp className="h-4 w-4" />;
+      default:
+        return <ArrowUpDown className="h-4 w-4" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-20 text-center">
+        <div className="animate-pulse">
+          <div className="h-4 bg-muted rounded w-3/4 mx-auto mb-4"></div>
+          <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -48,26 +109,65 @@ const PostPage = () => {
               <h1 className="text-2xl font-bold">{post.name || "익명"}</h1>
               <p className="text-sm text-muted-foreground mt-1">{new Date(post.createdAt).toLocaleString()}</p>
             </div>
-            <Button
-              onClick={async () => {
-                try {
-                  const newCount = await likePost(post.id);
-                  setPost({ ...post, likesCount: newCount });
-                } catch (error) {
-                  console.error("Like error:", error);
-                }
-              }}
-              disabled={hasLiked(post.id)}
-              variant="secondary"
-            >
-              <Heart className={hasLiked(post.id) ? "fill-primary text-primary" : ""} /> {post.likesCount || 0}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    const newCount = await likePost(post.id);
+                    setPost({ ...post, likesCount: newCount });
+                  } catch (error) {
+                    console.error("Like error:", error);
+                  }
+                }}
+                disabled={hasLiked(post.id)}
+                variant="secondary"
+              >
+                <Heart className={hasLiked(post.id) ? "fill-primary text-primary" : ""} /> {post.likesCount || 0}
+              </Button>
+              
+              {/* 드롭다운 메뉴 방식 */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {getSortIcon()}
+                    <span className="hidden sm:inline">{getSortLabel()}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => setCommentSortOrder('latest')}
+                    className={commentSortOrder === 'latest' ? 'bg-accent' : ''}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    최신순
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setCommentSortOrder('oldest')}
+                    className={commentSortOrder === 'oldest' ? 'bg-accent' : ''}
+                  >
+                    <History className="mr-2 h-4 w-4" />
+                    과거순
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setCommentSortOrder('popular')}
+                    className={commentSortOrder === 'popular' ? 'bg-accent' : ''}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    인기순
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </header>
 
           <div className="mt-4 leading-7" dangerouslySetInnerHTML={{ __html: post.message }} />
         </article>
 
-        <CommentSection postId={post.id} />
+        <CommentSection postId={post.id} sortOrder={commentSortOrder} />
       </main>
     </div>
   );

@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import RichEditor from "./RichEditor";
 import { addPost } from "@/lib/supabaseStore";
 import { useToast } from "@/hooks/use-toast";
+import { containsProfanity } from "@/utils/profanityFilter";
+import { getRandomName } from "@/utils/randomNames";
 
 interface MessageFormProps {
   open: boolean;
@@ -17,9 +19,11 @@ interface MessageFormProps {
 
 const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
   const [name, setName] = useState("");
+  const [affiliation, setAffiliation] = useState("");
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [cardStyle, setCardStyle] = useState("letter");
   const [cardColor, setCardColor] = useState("white");
@@ -37,21 +41,35 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
       return;
     }
 
-    const contact = contactType === "email" ? email : phone;
-    if (!contact.trim()) {
+    // 비속어 검사
+    if (containsProfanity(message)) {
       toast({
         title: "오류",
-        description: `${contactType === "email" ? "이메일" : "전화번호"}를 입력해주세요.`,
+        description: "부적절한 언어가 포함되어 있습니다. 내용을 수정해주세요.",
         variant: "destructive",
       });
       return;
     }
 
+    if (!password.trim()) {
+      toast({
+        title: "오류",
+        description: "비밀번호를 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const contact = contactType === "email" ? email : phone;
+
     setIsSubmitting(true);
     try {
+      const finalName = name || getRandomName();
       await addPost({
-        name: name || "익명",
+        name: finalName,
+        affiliation,
         contact,
+        password,
         message,
         cardStyle,
         cardColor,
@@ -64,8 +82,10 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
       
       // Reset form
       setName("");
+      setAffiliation("");
       setEmail("");
       setPhone("");
+      setPassword("");
       setMessage("");
       setCardStyle("letter");
       setCardColor("white");
@@ -97,12 +117,22 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="이름을 입력하세요 (미입력시 '익명'으로 표시)"
+              placeholder="이름을 입력하세요 (미입력시 랜덤 이름으로 표시)"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="affiliation">소속 (선택사항)</Label>
+            <Input
+              id="affiliation"
+              value={affiliation}
+              onChange={(e) => setAffiliation(e.target.value)}
+              placeholder="소속을 입력하세요"
             />
           </div>
 
           <div className="space-y-4">
-            <Label>연락처</Label>
+            <Label>연락처 (선택사항)</Label>
             <RadioGroup value={contactType} onValueChange={(value: "email" | "phone") => setContactType(value)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="email" id="email-radio" />
@@ -119,18 +149,28 @@ const MessageForm = ({ open, onOpenChange, onSuccess }: MessageFormProps) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="이메일을 입력하세요"
-                required
+                placeholder="이메일을 입력하세요 (선택사항)"
               />
             ) : (
               <Input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="전화번호를 입력하세요"
-                required
+                placeholder="전화번호를 입력하세요 (선택사항)"
               />
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">비밀번호 (수정/삭제용)</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="수정/삭제 시 사용할 비밀번호를 입력하세요"
+              required
+            />
           </div>
 
           {/* <div className="space-y-2">

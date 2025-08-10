@@ -1,7 +1,8 @@
+// pages/Event.tsx
 import { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Gift, Home, LayoutGrid, List, ArrowUpDown } from "lucide-react";
+import { Heart, MessageCircle, Gift, Home, LayoutGrid, List, ArrowUpDown, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import MessageCard from "@/components/MessageCard";
 import MessageForm from "@/components/MessageForm";
 import NoticeModal from "@/components/NoticeModal";
-import CommentSection from "@/components/CommentSection";
+import PopularPostsSlider from "@/components/PopularPostsSlider";
 
 const SortTabs = ({ mode, onChange }: { mode: SortMode; onChange: (m: SortMode) => void }) => (
   <div className="flex items-center gap-2">
@@ -41,30 +42,74 @@ const ViewToggle = ({ view, onChange }: { view: "card" | "list"; onChange: (v: "
   </div>
 );
 
+// 로딩 컴포넌트
+const LoadingSection = () => (
+  <div className="flex flex-col items-center justify-center py-20 space-y-4">
+    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <div className="text-center space-y-2">
+      <h3 className="text-lg font-semibold text-foreground">메시지를 불러오고 있습니다</h3>
+      <p className="text-sm text-muted-foreground">잠시만 기다려주세요...</p>
+    </div>
+  </div>
+);
+
 const Event = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
   const [posts, setPosts] = useState<EventPost[]>([]);
   const [sort, setSort] = useState<SortMode>("latest");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postsPerPage] = useState(6);
   const [commentSortOrder, setCommentSortOrder] = useState<"latest" | "oldest">("latest");
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태 추가
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPosts();
     
-    // 페이지 첫 접근 시 공지사항 모달만 표시
-    const hasSeenNotice = sessionStorage.getItem('eventNoticeShown');
-    if (!hasSeenNotice) {
-      setIsNoticeModalOpen(true);
-      sessionStorage.setItem('eventNoticeShown', 'true');
-    }
+    // 공지사항 모달 표시 여부 체크
+    const checkNoticeModal = () => {
+      const hideUntil = localStorage.getItem('hideNoticeUntil');
+      
+      if (!hideUntil) {
+        // 처음 방문하는 경우
+        setIsNoticeModalOpen(true);
+        return;
+      }
+      
+      const hideUntilDate = new Date(parseInt(hideUntil));
+      const now = new Date();
+      
+      // 숨김 기간이 지난 경우에만 모달 표시
+      if (now > hideUntilDate) {
+        setIsNoticeModalOpen(true);
+      }
+      // 숨김 기간이 아직 유효한 경우 모달을 열지 않음
+    };
+    
+    // 약간의 딜레이 후 체크 (페이지 로드 완료 후)
+    const timer = setTimeout(checkNoticeModal, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchPosts = async () => {
-    const postsData = await getPosts();
-    setPosts(postsData);
+    setIsLoading(true); // 로딩 시작
+    try {
+      const postsData = await getPosts();
+      setPosts(postsData);
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+      toast({
+        title: "오류",
+        description: "메시지를 불러오는데 실패했습니다. 다시 시도해주세요.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false); // 로딩 완료
+    }
   };
 
   const sortedPosts = useMemo(() => {
@@ -76,6 +121,12 @@ const Event = () => {
     }
     return arr;
   }, [posts, sort]);
+
+  const currentPosts = useMemo(() => {
+    return sortedPosts.slice(0, currentPage * postsPerPage);
+  }, [sortedPosts, currentPage, postsPerPage]);
+
+  const hasMorePosts = currentPosts.length < sortedPosts.length;
 
   const handleLike = async (postId: string) => {
     try {
@@ -102,52 +153,6 @@ const Event = () => {
   const handleCommentSortToggle = () => {
     setCommentSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest');
   };
-
-  const renderListView = () => (
-    <div className="space-y-4">
-      {sortedPosts.map((post) => (
-        <div key={post.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-semibold text-lg">{post.name || "익명"}</h3>
-              <p className="text-sm text-muted-foreground">
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLike(post.id)}
-                disabled={hasLiked(post.id)}
-                className={`flex items-center gap-2 ${hasLiked(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-              >
-                <Heart className={`h-4 w-4 ${hasLiked(post.id) ? "fill-current" : ""}`} />
-                {post.likesCount}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleViewDetails(post.id)}
-              >
-                자세히 보기
-              </Button>
-            </div>
-          </div>
-          
-          <div 
-            className="prose prose-sm max-w-none text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.message }}
-          />
-          
-          {/* 리스트 뷰에서도 댓글 섹션 추가 */}
-          <div className="mt-4 pt-4 border-t">
-            <CommentSection postId={post.id} sortOrder={commentSortOrder} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -226,32 +231,40 @@ const Event = () => {
 
       {/* 메시지 목록 */}
       <main className="container mx-auto px-6 py-12">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <MessageCircle className="text-blue-500" /> 
-            모두의 메시지 ({sortedPosts.length})
-          </h2>
-          <div className="flex items-center gap-4">
-            <ViewToggle view={viewMode} onChange={setViewMode} />
-            <SortTabs mode={sort} onChange={setSort} />
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleCommentSortToggle}
-              className="flex items-center gap-1"
-            >
-              <ArrowUpDown className="h-4 w-4" />
-              댓글 {commentSortOrder === 'latest' ? '최신순' : '과거순'}
-            </Button>
-            <Button onClick={() => setIsFormOpen(true)}>
-              <MessageCircle className="mr-2 h-4 w-4" />
-              메시지 남기기
-            </Button>
+        {/* 로딩 중이 아닐 때만 헤더 표시 */}
+        {!isLoading && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <MessageCircle className="text-blue-500" /> 
+              모두의 메시지 ({sortedPosts.length})
+            </h2>
+            <div className="flex items-center gap-4">
+              <ViewToggle view={viewMode} onChange={setViewMode} />
+              <SortTabs mode={sort} onChange={setSort} />
+              {/* <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCommentSortToggle}
+                className="flex items-center gap-1"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                댓글 {commentSortOrder === 'latest' ? '최신순' : '과거순'}
+              </Button> */}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 인기 메시지 슬라이더 - 로딩 중이 아니고 게시글이 있을 때만 표시 */}
+        {!isLoading && sortedPosts.length > 0 && (
+          <PopularPostsSlider posts={sortedPosts} onViewPost={handleViewDetails} />
+        )}
 
         <section>
-          {sortedPosts.length === 0 ? (
+          {isLoading ? (
+            // 로딩 중일 때
+            <LoadingSection />
+          ) : sortedPosts.length === 0 ? (
+            // 로딩 완료 후 게시글이 없을 때
             <div className="text-center py-20">
               <div className="max-w-md mx-auto">
                 <MessageCircle className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -263,21 +276,87 @@ const Event = () => {
               </div>
             </div>
           ) : viewMode === "card" ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedPosts.map((post) => (
-                <div key={post.id} className="space-y-4">
-                  <MessageCard 
-                    post={post} 
+            // 카드 뷰
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentPosts.map((post) => (
+                  <MessageCard
+                    key={post.id}
+                    post={post}
                     onLike={handleLike}
                     onViewDetails={handleViewDetails}
                     isLiked={hasLiked(post.id)}
+                    onClick={() => handleViewDetails(post.id)}
                   />
-                  <CommentSection postId={post.id} sortOrder={commentSortOrder} />
+                ))}
+              </div>
+              {hasMorePosts && (
+                <div className="text-center mt-12">
+                  <Button 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                  >
+                    더 많은 메시지 보기
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
-            renderListView()
+            // 리스트 뷰
+            <>
+              <div className="space-y-4">
+                {currentPosts.map((post) => (
+                  <div key={post.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">{post.name || "익명"}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLike(post.id)}
+                          disabled={hasLiked(post.id)}
+                          className={`flex items-center gap-2 ${hasLiked(post.id) ? "text-red-500" : "text-muted-foreground"}`}
+                        >
+                          <Heart className={`h-4 w-4 ${hasLiked(post.id) ? "fill-current" : ""}`} />
+                          {post.likesCount}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(post.id)}
+                        >
+                          자세히 보기
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="prose prose-sm max-w-none text-foreground"
+                      dangerouslySetInnerHTML={{ __html: post.message }}
+                    />
+                  </div>
+                ))}
+              </div>
+              {hasMorePosts && (
+                <div className="text-center mt-12">
+                  <Button 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                  >
+                    더 많은 메시지 보기
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
