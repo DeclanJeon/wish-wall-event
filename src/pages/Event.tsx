@@ -45,6 +45,7 @@ const Event = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConceptModalOpen, setIsConceptModalOpen] = useState(false);
   const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
+  const [dontShowToday, setDontShowToday] = useState(false);
   const [posts, setPosts] = useState<EventPost[]>([]);
   const [sort, setSort] = useState<SortMode>("latest");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
@@ -55,7 +56,12 @@ const Event = () => {
 
   useEffect(() => {
     fetchPosts();
-    setIsNoticeModalOpen(true);
+    // 오늘 하루 다시 보지 않음 체크
+    const today = new Date().toDateString();
+    const hideUntil = localStorage.getItem("event_notice_hide_until");
+    if (hideUntil !== today) {
+      setIsNoticeModalOpen(true);
+    }
   }, []);
 
   const fetchPosts = async () => {
@@ -308,12 +314,32 @@ const Event = () => {
               <p>• 모든 메시지는 검토 후 게시됩니다</p>
               <p>• 리치 에디터로 예쁘게 꾸며보세요</p>
             </div>
-            <Button 
-              onClick={() => setIsNoticeModalOpen(false)}
-              className="w-full"
-            >
-              확인했습니다
-            </Button>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="dontShowToday"
+                  checked={dontShowToday}
+                  onChange={(e) => setDontShowToday(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="dontShowToday" className="text-sm">
+                  오늘 하루 다시 보지 않음
+                </label>
+              </div>
+              <Button 
+                onClick={() => {
+                  if (dontShowToday) {
+                    const today = new Date().toDateString();
+                    localStorage.setItem("event_notice_hide_until", today);
+                  }
+                  setIsNoticeModalOpen(false);
+                }}
+                className="w-full"
+              >
+                확인했습니다
+              </Button>
+            </div>
           </div>
         </div>
       </div>

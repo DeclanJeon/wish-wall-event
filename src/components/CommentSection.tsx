@@ -24,7 +24,6 @@ interface CommentWithReplies extends EventComment {
 const CommentSection = ({ postId }: CommentSectionProps) => {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest" | "popular">("latest");
-  const [replySortOrder, setReplySortOrder] = useState<"latest" | "oldest" | "popular">("latest");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
   const [newCommentMessage, setNewCommentMessage] = useState("");
@@ -35,7 +34,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
 
   useEffect(() => {
     fetchComments();
-  }, [postId, sortOrder, replySortOrder]);
+  }, [postId, sortOrder]);
 
   const fetchComments = async () => {
     const commentsData = await getComments(postId);
@@ -70,13 +69,12 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       }
     });
 
-    // Sort comments and replies
-    const sortComments = (comments: CommentWithReplies[], isReply: boolean = false) => {
-      const currentSortOrder = isReply ? replySortOrder : sortOrder;
+    // Sort comments and replies using the same sort order
+    const sortComments = (comments: CommentWithReplies[]) => {
       comments.sort((a, b) => {
-        if (currentSortOrder === "latest") {
+        if (sortOrder === "latest") {
           return b.createdAt - a.createdAt;
-        } else if (currentSortOrder === "oldest") {
+        } else if (sortOrder === "oldest") {
           return a.createdAt - b.createdAt;
         } else { // popular
           return (b.likesCount || 0) - (a.likesCount || 0);
@@ -84,7 +82,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       });
       comments.forEach(comment => {
         if (comment.replies.length > 0) {
-          sortComments(comment.replies, true);
+          sortComments(comment.replies);
         }
       });
     };
@@ -223,8 +221,8 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     const hasReplies = comment.replies.length > 0;
     const marginLeft = depth * 24;
     
-    // 대댓글 계층을 3개로 제한
-    if (depth >= 3) return null;
+    // 대댓글 계층을 4개로 제한
+    if (depth >= 4) return null;
 
     return (
       <div key={comment.id} style={{ marginLeft: `${marginLeft}px` }} className="border-l-2 border-gray-100 pl-3">
@@ -266,7 +264,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
               {comment.likesCount || 0}
             </Button>
             
-            {depth < 2 && (
+            {depth < 3 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -334,22 +332,14 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">댓글 {comments.length}개</h3>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground">댓글:</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">정렬:</span>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === "latest" ? "oldest" : sortOrder === "oldest" ? "popular" : "latest")}
           >
             {sortOrder === "latest" ? "최신순" : sortOrder === "oldest" ? "과거순" : "인기순"}
-          </Button>
-          <span className="text-sm text-muted-foreground">대댓글:</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setReplySortOrder(replySortOrder === "latest" ? "oldest" : replySortOrder === "oldest" ? "popular" : "latest")}
-          >
-            {replySortOrder === "latest" ? "최신순" : replySortOrder === "oldest" ? "과거순" : "인기순"}
           </Button>
         </div>
       </div>
